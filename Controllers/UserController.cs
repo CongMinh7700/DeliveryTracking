@@ -2,6 +2,8 @@
 
 namespace DeliveryTrackingApp.Controllers;
 
+using DeliveryTrackingApp.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Models;
 using static DeliveryTrackingApp.Models.User;
 
@@ -9,10 +11,13 @@ public class UserController : Controller
 {
     private readonly ILogger<UserController> _logger;
     private readonly DeliveryDbContext _db;
-    public UserController(ILogger<UserController> logger, DeliveryDbContext db)
+    private readonly IHubContext<DriverStatusHub> _hubContext;
+
+    public UserController(ILogger<UserController> logger, DeliveryDbContext db, IHubContext<DriverStatusHub> hubContext)
     {
         _logger = logger;
         _db = db;
+        _hubContext = hubContext;
     }
 
     // Check thêm role user thường không thể thấy admin
@@ -88,7 +93,7 @@ public class UserController : Controller
 
     // POST: /User/UserUpdate/5
     [HttpPost]
-    public IActionResult UserUpdate(UserUdateDto model)
+    public IActionResult UserUpdate(UserUpdateDto model)
     {
         if (ModelState.IsValid)
         {

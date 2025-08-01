@@ -1,4 +1,4 @@
-﻿@model IEnumerable<User.SearchDto>
+﻿@model IEnumerable<DeliveryTrackingApp.Models.User.SearchDto>
 @{
     ViewBag.Title = "Danh sách người dùng";
 }
@@ -22,32 +22,55 @@
 <table class="table">
     <thead>
         <tr>
-            <th>Mã người dùng</th>
-            <th>Tên đăng nhập</th>
+            <th>Mã</th>
             <th>Họ tên</th>
-            <th>SDT</th>
+            <th>Trạng thái</th>
 
             <th>Thao tác</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="driverTable">
         @foreach (var item in Model)
         {
-            <tr>
-                <td>@item.UserId</td>
-                <td>@item.Username</td>
+            <tr id="driver-@item.Id">
+                <td>@item.Id</td>
                 <td>@item.FullName</td>
-                <td>@item.PhoneNumber</td>
+                <td class="status">@item.Status</td>
                 <td>
                     <form asp-action="Delete" method="post" style="display:inline">
-                        <input type="hidden" name="id" value="@item.UserId" />
+                        <input type="hidden" name="id" value="@item.Id" />
                         <button type="submit" class="btn btn-danger">Xóa</button>
                     </form>
-                    <a asp-action="UserUpdate" asp-route-id="@item.UserId" class="btn btn-primary">Sửa</a>
+                    <a asp-action="UserUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
                 </td>
             </tr>
         }
     </tbody>
+
 </table>
 
 <a asp-action="UserCreate" class="btn btn-success">Thêm mới</a>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/driverStatusHub")
+            .build();
+
+        connection.on("ReceiveDriverStatusList", function (drivers) {
+            console.log("SignalR update:", drivers); // kiểm tra có nhận được không
+
+            drivers.forEach(driver => {
+                const row = document.getElementById("driver-" + driver.id);
+                if (row) {
+                    row.querySelector(".status").textContent = driver.status;
+                }
+            });
+        });
+
+        connection.start().then(() => {
+            console.log("SignalR connected");
+        }).catch(err => console.error(err.toString()));
+    </script>
+}

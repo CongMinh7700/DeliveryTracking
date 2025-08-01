@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp;
 
+using DeliveryTrackingApp.Hubs;
 using Models;
 
 public class Program
@@ -15,6 +16,8 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<SqlDependencyService>();
 
         var app = builder.Build();
 
@@ -26,6 +29,11 @@ public class Program
             app.UseHsts();
         }
 
+        app.MapHub<DriverStatusHub>("/driverStatusHub");
+
+        var sqlDependencyService = app.Services.GetRequiredService<SqlDependencyService>();
+        sqlDependencyService.Start();
+
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
@@ -33,9 +41,14 @@ public class Program
 
         app.UseAuthorization();
 
+        //app.MapControllerRoute(
+        //    name: "default",
+        //    pattern: "{controller=Authentication}/{action=Login}/{id?}");
+
+
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Authentication}/{action=Login}/{id?}");
+            pattern: "{controller=User}/{action=UserPage}/{id?}");
 
         app.Run();
     }

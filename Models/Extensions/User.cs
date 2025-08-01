@@ -65,6 +65,16 @@ partial class User
         return res;
     }
 
+    public DriverStatusDto ToStatusDto()
+    {
+        var res = new DriverStatusDto();
+
+        res.Id = Id;
+        res.FullName = FullName + "";
+
+        return res;
+    }
+
     public ViewDto ToViewDto()
     {
         var res = ToBaseDto<ViewDto>();
@@ -90,7 +100,7 @@ partial class User
     {
         return new T
         {
-            UserId = Id,
+            Id = Id,
             Username = Username,
             FullName = FullName,
             PhoneNumber = PhoneNumber,
@@ -109,9 +119,9 @@ partial class User
     public class BaseDto
     {
         /// <summary>
-        /// UserID
+        /// Id
         /// </summary>
-        public string? UserId { get; set; }
+        public string? Id { get; set; }
 
         /// <summary>
         /// Username
@@ -157,6 +167,11 @@ partial class User
         /// ModifiedOn
         /// </summary>
         public DateTime? ModifiedOn { get; set; }
+
+        /// <summary>
+        /// Status
+        /// </summary>
+        public string? Status { get; set; }
     }
 
     /// <summary>
@@ -173,7 +188,7 @@ partial class User
     {
     }
 
-    public class UserUdateDto
+    public class UserUpdateDto
     {
         /// <summary>
         /// Id

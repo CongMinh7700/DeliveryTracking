@@ -25,7 +25,7 @@ public class AuthenticationController : Controller
         if (user != null)
         {
             TempData[Success.Login] = Message.Login;
-            return RedirectToAction("DeliveryTripPage", "DeliveryTrip");
+            return RedirectToAction("UserPage", "User");
         }
         else
         {
