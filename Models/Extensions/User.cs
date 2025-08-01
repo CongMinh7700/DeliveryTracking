@@ -65,16 +65,6 @@ partial class User
         return res;
     }
 
-    public DriverStatusDto ToStatusDto()
-    {
-        var res = new DriverStatusDto();
-
-        res.Id = Id;
-        res.FullName = FullName + "";
-
-        return res;
-    }
-
     public ViewDto ToViewDto()
     {
         var res = ToBaseDto<ViewDto>();

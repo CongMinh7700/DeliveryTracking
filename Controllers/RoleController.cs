@@ -3,7 +3,7 @@
 namespace DeliveryTrackingApp.Controllers;
 
 using Models;
-using static DeliveryTrackingApp.Models.Role;
+using static Models.Role;
 
 public class RoleController : Controller
 {

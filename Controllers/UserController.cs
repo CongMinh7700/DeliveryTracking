@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DeliveryTrackingApp.Controllers;
 
-using DeliveryTrackingApp.Hubs;
-using Microsoft.AspNetCore.SignalR;
+using Constants;
+using Hubs;
 using Models;
-using static DeliveryTrackingApp.Models.User;
+using static Models.User;
 
 public class UserController : Controller
 {
@@ -33,6 +34,16 @@ public class UserController : Controller
 
         var users = query.Select(p => p.ToSearchDto()).ToList();
 
+        foreach (var user in users)
+        {
+            var latestTrip = _db.DeliveryTrips
+                .Where(d => d.UserId == user.Id && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedOn)
+                .FirstOrDefault();
+
+            user.Status = latestTrip?.TripType == 0 ? DriverStatus.Busy : DriverStatus.Available;
+
+        }
         return View(users);
     }
 

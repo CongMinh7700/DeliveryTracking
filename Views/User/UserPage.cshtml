@@ -39,7 +39,7 @@
                 <td>
                     <form asp-action="Delete" method="post" style="display:inline">
                         <input type="hidden" name="id" value="@item.Id" />
-                        <button type="submit" class="btn btn-danger">Xóa</button>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa  không?')">Xóa</button>
                     </form>
                     <a asp-action="UserUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
                 </td>
@@ -50,27 +50,3 @@
 </table>
 
 <a asp-action="UserCreate" class="btn btn-success">Thêm mới</a>
-
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script>
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/driverStatusHub")
-            .build();
-
-        connection.on("ReceiveDriverStatusList", function (drivers) {
-            console.log("SignalR update:", drivers); // kiểm tra có nhận được không
-
-            drivers.forEach(driver => {
-                const row = document.getElementById("driver-" + driver.id);
-                if (row) {
-                    row.querySelector(".status").textContent = driver.status;
-                }
-            });
-        });
-
-        connection.start().then(() => {
-            console.log("SignalR connected");
-        }).catch(err => console.error(err.toString()));
-    </script>
-}

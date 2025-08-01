@@ -1,6 +1,6 @@
-﻿using DeliveryTrackingApp.Enums;
+﻿namespace DeliveryTrackingApp.Models;
 
-namespace DeliveryTrackingApp.Models;
+using Enums;
 
 partial class DeliveryTrip
 {

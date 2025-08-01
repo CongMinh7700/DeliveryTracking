@@ -12,3 +12,9 @@ public static class Success
 }
 
 public static class Error { }
+
+public static class DriverStatus
+{
+    public static string Busy = "Bận";
+    public static string Available = "Rảnh";
+}

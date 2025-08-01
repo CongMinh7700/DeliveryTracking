@@ -1,7 +1,10 @@
-﻿using DeliveryTrackingApp.Hubs;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
-using static DeliveryTrackingApp.Models.User;
+
+namespace DeliveryTrackingApp.Services;
+
+using Hubs;
+using static Models.User;
 
 public class SqlDependencyService
 {
@@ -39,6 +42,24 @@ public class SqlDependencyService
         var driverStatusList = GetDriverStatuses();
         await _hubContext.Clients.All.SendAsync("ReceiveDriverStatusList", driverStatusList);
 
+        if (driverStatusList.All(d => d.Status == "Bận"))
+        {
+            var message = $"⚠️ Hết tài xế lúc {DateTime.Now:HH:mm:ss dd/MM/yyyy}";
+            await _hubContext.Clients.All.SendAsync("ReceiveDriverAlert", message);
+
+            // Lưu vào DB
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var insertQuery = "INSERT INTO DriverAlerts (Message) VALUES (@Message)";
+                using (var cmd = new SqlCommand(insertQuery, connection))
+                {
+                    cmd.Parameters.AddWithValue("@Message", message);
+                    connection.Open();
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
         // Đăng ký lại dependency mới (không dùng lại cái cũ)
         Start();
     }
@@ -66,7 +87,7 @@ public class SqlDependencyService
             WHERE d.UserId = u.Id AND d.IsDeleted = 0
             ORDER BY d.CreatedOn DESC
         ) AS latest 
-        WHERE u.IsDeleted = 0";
+        WHERE u.IsDeleted = 0 AND u.Id != 'AD01'";
 
         using var command = new SqlCommand(query, connection);
         using var reader = command.ExecuteReader();

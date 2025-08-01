@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace DeliveryTrackingApp.Controllers;
 
-using DeliveryTrackingApp.Enums;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Enums;
 using Models;
 using static Models.DeliveryTrip;
 
@@ -69,7 +69,6 @@ public class DeliveryTripController : Controller
         {
             try
             {
-
                 // Replace Admin =  tripID of Admin
                 var newDeliveryTrip = Models.DeliveryTrip.Create(model.UserId, Enums.TripType.Departure, "Admin");
                 _db.DeliveryTrips.Add(newDeliveryTrip);

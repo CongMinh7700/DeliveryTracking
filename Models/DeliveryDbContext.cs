@@ -15,6 +15,8 @@ public partial class DeliveryDbContext : DbContext
 
     public virtual DbSet<DeliveryTrip> DeliveryTrips { get; set; }
 
+    public virtual DbSet<DriverAlert> DriverAlerts { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -27,11 +29,13 @@ public partial class DeliveryDbContext : DbContext
     {
         modelBuilder.Entity<DeliveryTrip>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC07C520823A");
+            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC07B7BC47D3");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedOn).HasColumnType("datetime");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.ModifiedBy).HasMaxLength(100);
             entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasMaxLength(50);
@@ -42,13 +46,28 @@ public partial class DeliveryDbContext : DbContext
                 .HasConstraintName("FK_Trips_User");
         });
 
+        modelBuilder.Entity<DriverAlert>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__DriverAl__3214EC072EA269B2");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Message).HasMaxLength(255);
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0795E4EF60");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0708E49413");
+
+            entity.HasIndex(e => e.Name, "UQ_RoleName").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedOn).HasColumnType("datetime");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.ModifiedBy).HasMaxLength(100);
             entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -56,11 +75,15 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07237CAF77");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0751A1A4BE");
+
+            entity.HasIndex(e => new { e.Id, e.Username }, "UQ_UserId_UserName").IsUnique();
 
             entity.Property(e => e.Id).HasMaxLength(50);
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedOn).HasColumnType("datetime");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.ModifiedBy).HasMaxLength(100);
             entity.Property(e => e.ModifiedOn).HasColumnType("datetime");

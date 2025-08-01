@@ -2,8 +2,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp;
 
-using DeliveryTrackingApp.Hubs;
+using Hubs;
 using Models;
+using Services;
 
 public class Program
 {
@@ -41,14 +42,13 @@ public class Program
 
         app.UseAuthorization();
 
-        //app.MapControllerRoute(
-        //    name: "default",
-        //    pattern: "{controller=Authentication}/{action=Login}/{id?}");
-
-
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=User}/{action=UserPage}/{id?}");
+            pattern: "{controller=Authentication}/{action=Login}/{id?}");
+
+        //app.MapControllerRoute(
+        //    name: "default",
+        //    pattern: "{controller=User}/{action=UserPage}/{id?}");
 
         app.Run();
     }
