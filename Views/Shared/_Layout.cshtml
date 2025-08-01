@@ -16,8 +16,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-      
-
         <!-- Navbar -->
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -109,9 +107,22 @@
                 alertTime.innerText = new Date().toLocaleString();
             }
 
-            // Push notification ngoài trình duyệt
-            Push.Permission.request(
-                function () {
+                   // Push notification ngoài trình duyệt (SỬA CHUẨN)
+        if (!("Notification" in window)) {
+            alert("Trình duyệt của bạn không hỗ trợ thông báo.");
+        } else if (Notification.permission === "granted") {
+            Push.create("🚨 Hết tài xế", {
+                body: message,
+                icon: "/images/driver-warning.png",
+                onClick: function () {
+                    window.focus();
+                    window.location.href = "/DriverStatus";
+                    this.close();
+                }
+            });
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
                     Push.create("🚨 Hết tài xế", {
                         body: message,
                         icon: "/images/driver-warning.png",
@@ -121,11 +132,14 @@
                             this.close();
                         }
                     });
-                },
-                function () {
+                } else {
                     console.warn("Không được cấp quyền thông báo.");
                 }
-            );
+            });
+        } else {
+            // Đã từng bị từ chối
+            console.warn("Bạn đã từ chối quyền gửi thông báo.");
+        }
 
             // Load lại dropdown khi có cảnh báo mới
             loadNotificationDropdown();
