@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Role.SearchDto>
+@{
+    ViewBag.Title = "Danh sách phân quyền";
+}
+
+<h2>Danh sách phân quyền</h2>
+
+<form method="get" asp-action="UserPage">
+    <input type="text" name="keyword" placeholder="Tìm kiếm..." />
+    <button type="submit">Tìm</button>
+</form>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Mã</th>
+            <th>Tên</th>
+
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Name</td>
+                <td>
+                    <form asp-action="Delete" method="post" style="display:inline">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                    <a asp-action="RoleUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="RoleCreate" class="btn btn-success">Thêm mới</a>

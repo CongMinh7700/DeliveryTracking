@@ -1,7 +1,8 @@
-using DeliveryTrackingApp.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp;
+
+using Models;
 
 public class Program
 {
@@ -9,8 +10,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddDbContext<DeliveryContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddDbContext<DeliveryDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
@@ -34,7 +35,7 @@ public class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}");
+            pattern: "{controller=Authentication}/{action=Login}/{id?}");
 
         app.Run();
     }

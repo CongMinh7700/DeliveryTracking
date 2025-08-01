@@ -1,31 +1,25 @@
-﻿namespace DeliveryTrackingApp.Models;
+﻿using System;
+using System.Collections.Generic;
 
-using Enums;
+namespace DeliveryTrackingApp.Models;
 
 public partial class DeliveryTrip
 {
-    /// <summary>
-    /// Id
-    /// </summary>
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
 
-    /// <summary>
-    /// UserId
-    /// </summary>
-    public string UserId { get; set; } = default!;
+    public string UserId { get; set; } = null!;
 
-    /// <summary>
-    /// TripType
-    /// </summary>
-    public TripType TripType { get; set; } // 0: Đi, 1: Về
+    public int TripType { get; set; }
 
-    /// <summary>
-    /// CreatedOn
-    /// </summary>
-    public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedOn { get; set; }
 
-    /// <summary>
-    /// CreatedBy
-    /// </summary>
     public string? CreatedBy { get; set; }
+
+    public DateTime? ModifiedOn { get; set; }
+
+    public string? ModifiedBy { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public virtual User User { get; set; } = null!;
 }

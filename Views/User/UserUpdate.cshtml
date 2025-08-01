@@ -1,0 +1,29 @@
+﻿@model DeliveryTrackingApp.Models.User.ViewDto
+
+@{
+    ViewBag.Title = "Chỉnh sửa người dùng";
+}   
+
+<h2>Chỉnh sửa người dùng</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.UserId)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.Username, "Tên người dùng")
+        @Html.TextBoxFor(m => m.Username, new { @class = "form-control", rows = 3 })
+        @Html.ValidationMessageFor(m => m.Username)
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.FullName, "Họ tên")
+        @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", rows = 3 })
+        @Html.ValidationMessageFor(m => m.FullName)
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a href="@Url.Action("UserPage")" class="btn btn-secondary">Quay lại</a>
+}
+
+@* Thêm thông báo toast thành công *@

@@ -1,0 +1,29 @@
+﻿@model DeliveryTrackingApp.Models.DeliveryTrip.ViewDto
+
+@{
+    ViewBag.Title = "Chỉnh sửa chuyến đi";
+}   
+
+<h2>Chỉnh sửa chuyến đi</h2>
+
+@using (Html.BeginForm("DeliveryTripUpdate", "DeliveryTrip", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.UserId, "Người dùng")
+        @Html.DropDownList("UserId", (SelectList)ViewBag.Users, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.UserId)
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.Type, "Loại")
+        @Html.DropDownList("Type", (SelectList)ViewBag.TripTypes, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Type)
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a href="@Url.Action("DeliveryTripPage")" class="btn btn-secondary">Quay lại</a>
+}
+
+@* Thêm thông báo toast thành công *@

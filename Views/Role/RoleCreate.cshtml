@@ -1,0 +1,30 @@
+﻿@model  DeliveryTrackingApp.Models.Role.ViewDto;
+
+@{
+    ViewBag.Title = "Tạo quyền mới";
+}
+
+<h2>Tạo thông báo mới</h2>
+
+@using (Html.BeginForm("RoleCreate", "Role", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-group">
+        <label>Tên quyền</label>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+    </div>
+    
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="@Url.Action("RolePage", "Role")" class="btn btn-secondary">Quay lại</a>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}

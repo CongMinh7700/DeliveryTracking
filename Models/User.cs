@@ -1,52 +1,35 @@
-﻿namespace DeliveryTrackingApp.Models;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// User
-/// </summary>
+namespace DeliveryTrackingApp.Models;
+
 public partial class User
 {
-    /// <summary>
-    /// Id
-    /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
-    /// <summary>
-    /// RoleId
-    /// </summary>
     public Guid RoleId { get; set; }
 
-    /// <summary>
-    /// UserName
-    /// </summary>
-    public string? UserName { get; set; }
+    public string? Username { get; set; }
 
-    /// <summary>
-    /// PasswordHash
-    /// </summary>
+    public string? FullName { get; set; }
+
+    public string? PhoneNumber { get; set; }
+
     public string? PasswordHash { get; set; }
 
-    /// <summary>
-    /// BirthDate
-    /// </summary>
-    public DateTime BirthDate { get; set; }
+    public DateOnly? BirthDate { get; set; }
 
-    /// <summary>
-    /// CreateOn
-    /// </summary>
-    public DateTime CreateOn { get; set; }
+    public DateTime CreatedOn { get; set; }
 
-    /// <summary>
-    /// CreatedBy
-    /// </summary>
     public string? CreatedBy { get; set; }
 
-    /// <summary>
-    /// ModifiedOn
-    /// </summary>
-    public DateTime ModifiedOn { get; set; }
+    public DateTime? ModifiedOn { get; set; }
 
-    /// <summary>
-    /// ModifiedBy
-    /// </summary>
     public string? ModifiedBy { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public virtual ICollection<DeliveryTrip> DeliveryTrips { get; set; } = new List<DeliveryTrip>();
+
+    public virtual Role Role { get; set; } = null!;
 }

@@ -1,0 +1,52 @@
+﻿@model IEnumerable<DeliveryTrip.SearchDto>
+
+@{
+    ViewBag.Title = "Danh sách chuyến đi";
+}
+
+<h2>Danh sách chuyến đi</h2>
+
+<form method="get" asp-action="UserPage">
+    <input type="text" name="keyword" placeholder="Tìm kiếm..." />
+    <button type="submit">Tìm</button>
+</form>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Mã</th>
+            <th>Tài xế</th>
+            <th>Đi / Về</th>
+
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.UserId</td>
+                <td>@item.Type</td>
+                <td>
+                    <form asp-action="Delete" method="post" style="display:inline">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                    <a asp-action="DeliveryTripUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="DeliveryTripCreate" class="btn btn-success">Thêm mới</a>

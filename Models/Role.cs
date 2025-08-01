@@ -1,27 +1,23 @@
-﻿namespace DeliveryTrackingApp.Models;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// Role
-/// </summary>
+namespace DeliveryTrackingApp.Models;
+
 public partial class Role
 {
-    /// <summary>
-    /// Id
-    /// </summary>
     public Guid Id { get; set; }
 
-    /// <summary>
-    /// Name
-    /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
 
-    /// <summary>
-    /// CreatedOn
-    /// </summary>
-    public DateTime CreatedOn { get; set; } = DateTime.Now;
+    public DateTime CreatedOn { get; set; }
 
-    /// <summary>
-    /// ModifiedOn
-    /// </summary>
-    public DateTime ModifiedOn { get; set; }
+    public string CreatedBy { get; set; } = null!;
+
+    public DateTime? ModifiedOn { get; set; }
+
+    public string? ModifiedBy { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }
