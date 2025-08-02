@@ -1,0 +1,100 @@
+﻿@model DeliveryTrackingApp.Models.User.ViewDto
+
+@{
+    ViewBag.Title = "Chi tiết người dùng";
+    var userId = Model?.Id;
+}
+
+<h2>Chi tiết người dùng</h2>
+
+@if (Model == null)
+{
+    <div class="alert alert-danger">Không tìm thấy người dùng.</div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Thông tin người dùng</strong>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Mã người dùng:</dt>
+                <dd class="col-sm-9">@Model.Id</dd>
+
+                <dt class="col-sm-3">Tên đầy đủ:</dt>
+                <dd class="col-sm-9">@Model.FullName</dd>
+
+                <dt class="col-sm-3">Trạng thái tài xế:</dt>
+                <dd class="col-sm-9">
+                    @if (Model.Status == DeliveryTrackingApp.Constants.DriverStatus.Busy)
+                    {
+                        <span class="badge bg-danger">Bận</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Rảnh</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <h4 class="mt-4">Danh sách chuyến đi</h4>
+    <table class="table" id="trip-table">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Phiếu giao</th>
+                <th>Tài xế</th>
+                <th>Đi / Về</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dữ liệu sẽ được load từ API -->
+        </tbody>
+    </table>
+
+    <div id="trip-error" class="alert alert-danger d-none">Không thể tải danh sách chuyến đi.</div>
+
+    <a href="@Url.Action("UserPage", "User")" class="btn btn-secondary">Quay lại danh sách</a>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const userId = "@userId";
+            const tableBody = document.querySelector("#trip-table tbody");
+            const errorBox = document.getElementById("trip-error");
+
+            fetch(`/api/users/${userId}/trips`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Không thể tải danh sách.");
+                    return res.json();
+                })
+                .then(trips => {
+                    if (!trips || trips.length === 0) {
+                        tableBody.innerHTML = "<tr><td colspan='5'>Không có chuyến đi nào.</td></tr>";
+                        return;
+                    }
+
+                    trips.forEach(item => {
+                        const row = `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.deliveryNoteCode}</td>
+                                <td>${item.userId}</td>
+                                <td>${item.type}</td>
+                                <td>${item.status}</td>
+                            </tr>`;
+                        tableBody.insertAdjacentHTML("beforeend", row);
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                    errorBox.classList.remove("d-none");
+                });
+        });
+    </script>
+}

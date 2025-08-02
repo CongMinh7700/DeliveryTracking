@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DeliveryTrackingApp;
 
 using Hubs;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Models;
 using Services;
 
@@ -19,7 +20,12 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<SqlDependencyService>();
-
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Authentication/Login";
+        options.AccessDeniedPath = "/Home/Index";
+    });
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -40,6 +46,7 @@ public class Program
 
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllerRoute(

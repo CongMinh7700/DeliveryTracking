@@ -33,7 +33,7 @@ public partial class DeliveryDbContext : DbContext
     {
         modelBuilder.Entity<DeliveryNote>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC0761B2E49A");
+            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC0703F98C34");
 
             entity.HasIndex(e => e.Code, "UQ_DeliveryNote_Code").IsUnique();
 
@@ -43,6 +43,7 @@ public partial class DeliveryDbContext : DbContext
             entity.Property(e => e.CreatedOn)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DeliveryTime).HasColumnType("datetime");
             entity.Property(e => e.ModifiedBy).HasMaxLength(100);
             entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
             entity.Property(e => e.Note).HasMaxLength(255);
@@ -50,7 +51,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<DeliveryTrip>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC079BEF5A8C");
+            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC07F1BFAD65");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -74,7 +75,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<DriverAlert>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DriverAl__3214EC075DC3F389");
+            entity.HasKey(e => e.Id).HasName("PK__DriverAl__3214EC07380BA653");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedOn)
@@ -85,7 +86,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC071932A0C9");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0707A9675F");
 
             entity.HasIndex(e => e.Name, "UQ_RoleName").IsUnique();
 
@@ -101,7 +102,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07DDAB799F");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0795F258C7");
 
             entity.HasIndex(e => new { e.Id, e.Username }, "UQ_UserId_UserName").IsUnique();
 

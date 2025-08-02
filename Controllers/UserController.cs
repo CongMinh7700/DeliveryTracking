@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp.Controllers;
 
 using Constants;
+using Helpers;
 using Hubs;
 using Models;
 
@@ -21,6 +25,7 @@ public class UserController : Controller
     }
 
     // Check thêm role user thường không thể thấy admin
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public IActionResult UserPage(string? keyword)
     {
@@ -46,8 +51,75 @@ public class UserController : Controller
         return View(users);
     }
 
+
+    // UserDetail/id
+    [HttpGet]
+    public IActionResult UserDetail(string id)
+    {
+        var query = _db.Users.Where(p => !p.IsDeleted && p.Id == id).Include(p => p.DeliveryTrips);
+
+        var user = query.Select(p => p.ToViewDto()).FirstOrDefault();
+        if (user != null)
+        {
+            var latestTrip = _db.DeliveryTrips
+                .Where(d => d.UserId == user.Id && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedOn)
+                .FirstOrDefault();
+
+            user.Status = latestTrip?.TripType == 0 ? DriverStatus.Busy : DriverStatus.Available;
+        }
+
+        return View(user);
+    }
+
+    [HttpGet("api/users/{id}/trips")]
+    public IActionResult GetUserTrips(string id)
+    {
+        var stopwatch = Stopwatch.StartNew(); // bắt đầu đo
+
+        var trips = _db.DeliveryTrips.Where(p => p.UserId == id && !p.IsDeleted)
+            .OrderByDescending(p => p.CreatedOn)
+            .Include(p => p.DeliveryNote)
+            .ToList()
+            .Select(p =>
+            {
+                var dto = p.ToSearchDto();
+                var deliveryTime = dto.CreatedOn;
+
+                var requiredTime = p.DeliveryNote?.DeliveryTime ?? DateTime.MaxValue;
+
+                var alert = _db.DriverAlerts
+                    .Where(a => a.CreatedOn <= deliveryTime)
+                    .OrderByDescending(a => a.CreatedOn)
+                    .FirstOrDefault();
+
+                var alertTime = alert?.CreatedOn;
+
+                var deadline = requiredTime;
+                if (alertTime.HasValue && alertTime.Value < requiredTime)
+                {
+                    deadline = alertTime.Value;
+                }
+
+                dto.Status = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery) ? "Giao trễ" : "Đúng giờ";
+
+                return dto;
+            })
+            .ToList();
+
+        stopwatch.Stop(); // dừng đồng hồ
+
+        var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+
+        // Bạn có thể log ra console, file, hoặc hiển thị tạm thời
+        Console.WriteLine($"[DEBUG] GetUserTrips mất {elapsedMilliseconds}ms cho UserId: {id}");
+
+        return Ok(trips);
+    }
+
     // POST: /User/Delete/5
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete(string id)
     {
         var user = _db.Users.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
@@ -65,6 +137,7 @@ public class UserController : Controller
     }
 
     // GET: /User/Create
+    [Authorize(Roles = "Admin")]
     public IActionResult UserCreate()
     {
         return View();
@@ -72,14 +145,16 @@ public class UserController : Controller
 
     // POST: /User/UserCreate
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public IActionResult UserCreate(Models.User.ViewDto model)
     {
         if (ModelState.IsValid)
         {
             try
             {
-                string userId = GenerateUserId();
-                var role = _db.Roles.FirstOrDefault(p => p.Name.ToLower() == Constants.RoleString.Driver.ToLower());
+                var userId = GenerateStringId.GenerateCode(_db.Users, u => u.Id, "GN", 2);
+
+                var role = _db.Roles.FirstOrDefault(p => p.Name.ToLower() == RoleString.Driver.ToLower());
                 if (role == null)
                 {
                     role = Role.Create(RoleString.Driver, "AD01");
@@ -129,25 +204,5 @@ public class UserController : Controller
             }
         }
         return RedirectToAction("UserPage");
-    }
-
-    public string GenerateUserId()
-    {
-        var lastCode = _db.Users.Where(u => u.Id.StartsWith("GN"))
-            .OrderByDescending(u => u.Id)
-            .Select(u => u.Id).FirstOrDefault();
-
-        int nextNumber = 1;
-
-        if (!string.IsNullOrEmpty(lastCode) && lastCode.StartsWith("GN"))
-        {
-            var numberPart = lastCode.Substring(2);
-            if (int.TryParse(numberPart, out int current))
-            {
-                nextNumber = current + 1;
-            }
-        }
-
-        return $"GN{nextNumber:D2}";
     }
 }

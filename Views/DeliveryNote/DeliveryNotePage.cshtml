@@ -1,4 +1,4 @@
-﻿@model IEnumerable<DeliveryTrip.SearchDto>
+﻿@model IEnumerable<DeliveryNote.SearchDto>
 
 @{
     ViewBag.Title = "Danh sách chuyến đi";
@@ -24,9 +24,8 @@
     <thead>
         <tr>
             <th>Mã</th>
-            <th>Phiếu giao</th>
-            <th>Tài xế</th>
-            <th>Đi / Về</th>
+            <th>Thời gian giao hàng</th>
+            <th>Ghi chú</th>
 
             <th>Thao tác</th>
         </tr>
@@ -35,20 +34,19 @@
         @foreach (var item in Model)
         {
             <tr>
-                <td>@item.Id</td>
-                <td>@item.DeliveryNoteCode</td>
-                <td>@item.UserId</td>
-                <td>@item.TypeName</td>
+                <td>@item.Code</td>
+                <td>@item.DeliveryTime</td>
+                <td>@item.Note</td>
                 <td>
                     <form asp-action="Delete" method="post" style="display:inline">
                         <input type="hidden" name="id" value="@item.Id" />
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa  không?')">Xóa</button>
                     </form>
-                    <a asp-action="DeliveryTripUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
+                    <a asp-action="DeliveryNoteUpdate" asp-route-id="@item.Id" class="btn btn-primary">Sửa</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<a asp-action="DeliveryTripCreate" class="btn btn-success">Thêm mới</a>
+<a asp-action="DeliveryNoteCreate" class="btn btn-success">Thêm mới</a>

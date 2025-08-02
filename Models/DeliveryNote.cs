@@ -9,7 +9,9 @@ public partial class DeliveryNote
 
     public string Code { get; set; } = null!;
 
-    public DateOnly DeliveryDate { get; set; }
+    public DateTime DeliveryTime { get; set; }
+
+    public int Status { get; set; }
 
     public string? Note { get; set; }
 

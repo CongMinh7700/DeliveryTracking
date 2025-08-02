@@ -11,13 +11,34 @@
     @Html.AntiForgeryToken()
     <div class="form-group">
         <label>Người dùng</label>
-        @Html.DropDownList("UserId", (SelectList)ViewBag.Users, new { @class = "form-control" })
+        @Html.DropDownList("UserId", (SelectList)ViewBag.Users, new { @class = "form-control", onchange = "this.form.submit();" })
     </div>
     <div class="form-group">
         <label>Loại</label>
         @Html.DropDownList("Type", (SelectList)ViewBag.TripTypes, new { @class = "form-control" })
     </div>
-    <button type="submit" class="btn btn-success">Lưu</button>
+    <div class="form-group">
+        <label>Phiếu giao</label>
+        @if (ViewBag.DeliveryNotes == null )
+        {
+            <div class="alert alert-warning">⚠️ Hết đơn hàng!</div>
+            @Html.DropDownList("DeliveryNoteId", Enumerable.Empty<SelectListItem>(), new { @class = "form-control", disabled = "disabled" })
+        }
+        else
+        {
+            @Html.DropDownList("DeliveryNoteId", (SelectList)ViewBag.DeliveryNotes, "-- Chọn phiếu giao --", new { @class = "form-control" })
+        }
+    </div>
+
+    @if (ViewBag.DeliveryNotes == null || ((SelectList)ViewBag.DeliveryNotes).Count() == 0)
+    {
+        <button type="submit" class="btn btn-success" disabled>Hết đơn hàng</button>
+    }
+    else
+    {
+        <button type="submit" class="btn btn-success">Lưu</button>
+    }
+
     <a href="@Url.Action("DeliveryTripPage", "DeliveryTrip")" class="btn btn-secondary">Quay lại</a>
 }
 

@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DeliveryTrackingApp.Controllers;
 
 using Models;
 using static Models.Role;
 
+[Authorize(Roles = "Admin")]
 public class RoleController : Controller
 {
     private readonly ILogger<RoleController> _logger;
@@ -33,8 +35,8 @@ public class RoleController : Controller
         var role = _db.Roles.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
         if (role != null)
         {
-            role.Delete("AD01");//Replace to AdminId
-            // Hiện thêm popup có muốn xóa hay không
+            var createBy = User.FindFirst("UserId")?.Value;
+            role.Delete(createBy);//Replace to AdminId
             _db.SaveChanges();
             TempData["Message"] = "Xóa quyền thành công";
         }
@@ -59,8 +61,8 @@ public class RoleController : Controller
         {
             try
             {
-                // Replace AD01 =  UserID of Admin
-                var newRole = Models.Role.Create(model.Name, "AD01");
+                var createBy = User.FindFirst("UserId")?.Value;
+                var newRole = Models.Role.Create(model.Name, createBy);
                 _db.Roles.Add(newRole);
                 _db.SaveChanges();
                 return RedirectToAction("RolePage");
@@ -89,10 +91,11 @@ public class RoleController : Controller
         {
             try
             {
+                var createBy = User.FindFirst("UserId")?.Value;
                 var role = _db.Roles.Find(model.Id);
                 if (role == null) return NotFound();
 
-                role.Update(model.Name, "AD01");
+                role.Update(model.Name, createBy);
                 _db.Roles.Update(role);
                 _db.SaveChanges();
 

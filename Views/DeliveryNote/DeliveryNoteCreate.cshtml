@@ -1,0 +1,37 @@
+﻿@model DeliveryTrackingApp.Models.DeliveryNote.ViewDto;
+
+@{
+    ViewBag.Title = "Tạo chuyến đi mới";
+}
+
+<h2>Tạo chuyến đi mới</h2>
+
+@using (Html.BeginForm("DeliveryNoteCreate", "DeliveryNote", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label>Ngày giao</label>
+        @Html.TextBoxFor(m => m.DeliveryTime, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "datetime-local" })
+        @Html.ValidationMessageFor(m => m.DeliveryTime, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label>Ghi chú</label>
+        @Html.TextAreaFor(m => m.Note, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Note, "", new { @class = "text-danger" })
+    </div>
+    
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="@Url.Action("DeliveryNotePage", "DeliveryNote")" class="btn btn-secondary">Quay lại</a>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}

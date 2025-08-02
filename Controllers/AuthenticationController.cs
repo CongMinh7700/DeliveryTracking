@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DeliveryTrackingApp.Controllers;
 
@@ -11,6 +14,7 @@ public class AuthenticationController : Controller
 {
     private readonly ILogger<AuthenticationController> _logger;
     private readonly DeliveryDbContext _db;
+
     public AuthenticationController(ILogger<AuthenticationController> logger, DeliveryDbContext db)
     {
         _logger = logger;
@@ -18,18 +22,37 @@ public class AuthenticationController : Controller
     }
 
     [HttpPost]
-    public ActionResult Login(LoginR request)
+    public async Task<IActionResult> Login(LoginR request)
     {
-        var guid = Guid.NewGuid();
-        var user = ValidateLogin(request);
+        var user = ValidateLogin(request); // Lấy User từ DB
+
         if (user != null)
         {
+            // Truy vấn RoleName từ RoleId
+            var role = _db.Roles.FirstOrDefault(r => r.Id == user.RoleId);
+            var roleName = role?.Name ?? RoleString.Driver;
+
+            // Tạo Claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("UserId", user.Id),
+                new Claim("FullName", user.FullName ?? ""),
+                new Claim(ClaimTypes.Role, roleName)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            // Tạo cookie xác thực
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
             TempData[Success.Login] = Message.Login;
             return RedirectToAction("UserPage", "User");
         }
         else
         {
-            ModelState.AddModelError("Error", "Tài khoản hoặc mật khẩu không chính xác vui lòng thử lại");
+            ModelState.AddModelError("Error", "Tài khoản hoặc mật khẩu không chính xác, vui lòng thử lại");
             return View("Login");
         }
     }
@@ -56,7 +79,7 @@ public class AuthenticationController : Controller
 
             if (role == null)
             {
-                role = Role.Create(RoleString.Driver, "AD01");
+                role = Role.Create(RoleString.Driver, "System");
                 _db.Roles.Add(role);
                 _db.SaveChanges();
             }
@@ -73,7 +96,7 @@ public class AuthenticationController : Controller
             else
             {
                 string hashedPassword = PasswordHash.HashPassword(request.Password);
-                ett = Models.User.Create(request.Username + "", hashedPassword, request.FullName + "", role.Id, "admin");
+                ett = Models.User.Create(request.Username + "", hashedPassword, request.FullName + "", role.Id, "");
 
                 _db.Users.Add(ett);
                 _db.SaveChanges();

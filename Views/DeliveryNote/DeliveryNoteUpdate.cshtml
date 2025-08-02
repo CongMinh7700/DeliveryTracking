@@ -1,0 +1,30 @@
+﻿@model DeliveryTrackingApp.Models.DeliveryNote.ViewDto
+
+@{
+    ViewBag.Title = "Chỉnh sửa chuyến đi";
+}   
+
+<h2>Chỉnh sửa chuyến đi</h2>
+
+@using (Html.BeginForm("DeliveryNoteUpdate", "DeliveryNote", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+
+    <div class="form-group">
+        <label>Ngày giao</label>
+        @Html.TextBoxFor(m => m.DeliveryTime, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+        @Html.ValidationMessageFor(m => m.DeliveryTime, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label>Ghi chú</label>
+        @Html.TextAreaFor(m => m.Note, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.Note, "", new { @class = "text-danger" })
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a href="@Url.Action("DeliveryNotePage")" class="btn btn-secondary">Quay lại</a>
+}
+
+@* Thêm thông báo toast thành công *@

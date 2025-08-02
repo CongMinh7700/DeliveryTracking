@@ -68,6 +68,7 @@ partial class User
     public ViewDto ToViewDto()
     {
         var res = ToBaseDto<ViewDto>();
+
         return res;
     }
 

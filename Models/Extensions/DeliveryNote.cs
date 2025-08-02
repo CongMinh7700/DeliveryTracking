@@ -1,10 +1,8 @@
 ﻿namespace DeliveryTrackingApp.Models;
 
-using Enums;
-
-partial class DeliveryTrip
+partial class DeliveryNote
 {
-    public DeliveryTrip()
+    public DeliveryNote()
     {
         Id = Guid.NewGuid();
     }
@@ -12,18 +10,18 @@ partial class DeliveryTrip
     /// <summary>
     /// Create
     /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="noteId"></param>
-    /// <param name="type"></param>
+    /// <param name="code"></param>
+    /// <param name="DeliveryTime"></param>
+    /// <param name="note"></param>
     /// <param name="createdBy"></param>
     /// <returns></returns>
-    public static DeliveryTrip Create(string userId, Guid noteId, int type, string createdBy)
+    public static DeliveryNote Create(string code, DateTime DeliveryTime, string? note, string createdBy)
     {
-        var res = new DeliveryTrip
+        var res = new DeliveryNote
         {
-            UserId = userId,
-            TripType = type,
-            DeliveryNoteId = noteId,
+            Code = code,
+            DeliveryTime = DeliveryTime,
+            Note = note,
 
             CreatedBy = createdBy,
             CreatedOn = DateTime.Now,
@@ -35,13 +33,27 @@ partial class DeliveryTrip
     /// <summary>
     /// Update
     /// </summary>
-    /// <param name="trip"></param>
-    /// <param name="noteId"></param>
+    /// <param name="DeliveryTime"></param>
+    /// <param name="note"></param>
     /// <param name="modifiedBy"></param>
-    public void Update(int trip, Guid noteId, string modifiedBy)
+    public void Update(DateTime DeliveryTime, string? note, string modifiedBy)
     {
-        TripType = trip;
-        DeliveryNoteId = noteId;
+        DeliveryTime = DeliveryTime;
+        Note = note;
+
+        ModifiedBy = modifiedBy;
+        ModifiedOn = DateTime.Now;
+    }
+
+    /// <summary>
+    /// UpdateStatus
+    /// </summary>
+    /// <param name="status"></param>
+    /// <param name="modifiedBy"></param>
+    public void UpdateStatus(int status, string modifiedBy)
+    {
+        Status = status;
+
         ModifiedBy = modifiedBy;
         ModifiedOn = DateTime.Now;
     }
@@ -70,6 +82,16 @@ partial class DeliveryTrip
         return res;
     }
 
+    public SearchCbDto ToSearchCbDto()
+    {
+        var res = new SearchCbDto();
+
+        res.DeliveryNoteId = Id;
+        res.Code = Code;
+
+        return res;
+    }
+
     /// <summary>
     /// Convert to data transfer object
     /// </summary>
@@ -79,11 +101,10 @@ partial class DeliveryTrip
         return new T
         {
             Id = Id,
+            Code = Code,
+            DeliveryTime = DeliveryTime,
+            Note = Note,
             IsDeleted = IsDeleted,
-            UserId = UserId,
-            DeliveryNoteCode = DeliveryNote?.Code ?? "",
-            DeliveryNoteId = DeliveryNoteId,
-            Type = TripType,
             CreatedOn = CreatedOn,
             CreatedBy = CreatedBy,
             ModifiedBy = ModifiedBy,
@@ -102,19 +123,19 @@ partial class DeliveryTrip
         public Guid Id { get; set; }
 
         /// <summary>
-        /// UserId
+        /// Code
         /// </summary>
-        public string? UserId { get; set; }
+        public string? Code { get; set; }
 
         /// <summary>
-        /// DeliveryNoteCode
+        /// DeliveryTime
         /// </summary>
-        public string? DeliveryNoteCode { get; set; }
+        public DateTime DeliveryTime { get; set; }
 
         /// <summary>
-        /// DeliveryNoteId
+        /// Note
         /// </summary>
-        public Guid DeliveryNoteId { get; set; }
+        public string? Note { get; set; }
 
         /// <summary>
         /// IsDelete
@@ -125,22 +146,6 @@ partial class DeliveryTrip
         /// CreatedOn
         /// </summary>
         public DateTime? CreatedOn { get; set; }
-
-        /// <summary>
-        /// Type
-        /// </summary>
-        public int Type { get; set; }
-
-        /// <summary>
-        /// TypeName
-        /// </summary>
-        public string TypeName
-        {
-            get
-            {
-                return EnumHelper.GetDescription((TripType)Type);
-            }
-        }
 
         /// <summary>
         /// CreatedBy
@@ -170,16 +175,12 @@ partial class DeliveryTrip
     /// </summary>
     public class SearchDto : BaseDto
     {
-        /// <summary>
-        /// Status
-        /// </summary>
-        public string? Status { get; set; }
     }
 
     /// <summary>
-    /// DeliveryTripUdateDto
+    /// DeliveryNoteUdateDto
     /// </summary>
-    public class DeliveryTripUdateDto
+    public class DeliveryNoteUdateDto
     {
         /// <summary>
         /// Id
@@ -187,18 +188,26 @@ partial class DeliveryTrip
         public Guid Id { get; set; }
 
         /// <summary>
-        /// UserId
+        /// DeliveryTime
         /// </summary>
-        public string UserId { get; set; }
+        public DateTime DeliveryTime { get; set; }
 
         /// <summary>
-        /// NoteId
+        /// Note
         /// </summary>
-        public Guid NoteId { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class SearchCbDto
+    {
+        /// <summary>
+        /// DeliveryNoteId
+        /// </summary>
+        public Guid? DeliveryNoteId { get; set; }
 
         /// <summary>
-        /// Type
+        /// Code
         /// </summary>
-        public int Type { get; set; }
+        public string? Code { get; set; }
     }
 }
