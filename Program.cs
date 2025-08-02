@@ -25,6 +25,7 @@ public class Program
     {
         options.LoginPath = "/Authentication/Login";
         options.AccessDeniedPath = "/Home/Index";
+        options.LogoutPath = "/Authentication/Logout";
     });
         var app = builder.Build();
 
@@ -51,7 +52,7 @@ public class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Authentication}/{action=Login}/{id?}");
+            pattern: "{controller=Home}/{action=Index}/{id?}");
 
         //app.MapControllerRoute(
         //    name: "default",

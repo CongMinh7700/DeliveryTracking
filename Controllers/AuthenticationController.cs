@@ -100,10 +100,21 @@ public class AuthenticationController : Controller
 
                 _db.Users.Add(ett);
                 _db.SaveChanges();
-                return RedirectToAction("Index", "Login");
+                return RedirectToAction("Login", "Authentication");
             }
         }
         return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        // Đăng xuất khỏi hệ thống
+        await HttpContext.SignOutAsync();
+
+        // Chuyển về trang đăng nhập
+        return RedirectToAction("Login", "Authentication");
     }
 
     private User.SearchDto? ValidateLogin(LoginR request)
