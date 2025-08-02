@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp.Models;
 
@@ -12,6 +14,8 @@ public partial class DeliveryDbContext : DbContext
         : base(options)
     {
     }
+
+    public virtual DbSet<DeliveryNote> DeliveryNotes { get; set; }
 
     public virtual DbSet<DeliveryTrip> DeliveryTrips { get; set; }
 
@@ -27,9 +31,26 @@ public partial class DeliveryDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DeliveryNote>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC0761B2E49A");
+
+            entity.HasIndex(e => e.Code, "UQ_DeliveryNote_Code").IsUnique();
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ModifiedBy).HasMaxLength(100);
+            entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
+            entity.Property(e => e.Note).HasMaxLength(255);
+        });
+
         modelBuilder.Entity<DeliveryTrip>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC07B7BC47D3");
+            entity.HasKey(e => e.Id).HasName("PK__Delivery__3214EC079BEF5A8C");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -40,6 +61,11 @@ public partial class DeliveryDbContext : DbContext
             entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasMaxLength(50);
 
+            entity.HasOne(d => d.DeliveryNote).WithMany(p => p.DeliveryTrips)
+                .HasForeignKey(d => d.DeliveryNoteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Trips_Notes");
+
             entity.HasOne(d => d.User).WithMany(p => p.DeliveryTrips)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -48,7 +74,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<DriverAlert>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DriverAl__3214EC072EA269B2");
+            entity.HasKey(e => e.Id).HasName("PK__DriverAl__3214EC075DC3F389");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedOn)
@@ -59,7 +85,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0708E49413");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC071932A0C9");
 
             entity.HasIndex(e => e.Name, "UQ_RoleName").IsUnique();
 
@@ -75,7 +101,7 @@ public partial class DeliveryDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0751A1A4BE");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07DDAB799F");
 
             entity.HasIndex(e => new { e.Id, e.Username }, "UQ_UserId_UserName").IsUnique();
 

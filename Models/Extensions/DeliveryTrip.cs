@@ -13,15 +13,17 @@ partial class DeliveryTrip
     /// Create
     /// </summary>
     /// <param name="userId"></param>
+    /// <param name="noteId"></param>
     /// <param name="trip"></param>
     /// <param name="createdBy"></param>
     /// <returns></returns>
-    public static DeliveryTrip Create(string userId, TripType trip, string createdBy)
+    public static DeliveryTrip Create(string userId, Guid noteId, TripType trip, string createdBy)
     {
         var res = new DeliveryTrip
         {
             UserId = userId,
             TripType = (int)trip,
+            DeliveryNoteId = noteId,
 
             CreatedBy = createdBy,
             CreatedOn = DateTime.Now,
@@ -34,11 +36,12 @@ partial class DeliveryTrip
     /// Update
     /// </summary>
     /// <param name="trip"></param>
+    /// <param name="noteId"></param>
     /// <param name="modifiedBy"></param>
-    public void Update(int trip, string modifiedBy)
+    public void Update(int trip, Guid noteId, string modifiedBy)
     {
         TripType = trip;
-
+        DeliveryNoteId = noteId;
         ModifiedBy = modifiedBy;
         ModifiedOn = DateTime.Now;
     }
@@ -78,6 +81,7 @@ partial class DeliveryTrip
             Id = Id,
             IsDeleted = IsDeleted,
             UserId = UserId,
+            DeliveryNoteId = DeliveryNoteId,
             Type = TripType,
             CreatedOn = CreatedOn,
             CreatedBy = CreatedBy,
@@ -100,6 +104,11 @@ partial class DeliveryTrip
         /// UserId
         /// </summary>
         public string? UserId { get; set; }
+
+        /// <summary>
+        /// DeliveryNoteId
+        /// </summary>
+        public Guid DeliveryNoteId { get; set; }
 
         /// <summary>
         /// IsDelete
@@ -160,6 +169,11 @@ partial class DeliveryTrip
         /// UserId
         /// </summary>
         public string UserId { get; set; }
+
+        /// <summary>
+        /// NoteId
+        /// </summary>
+        public Guid NoteId { get; set; }
 
         /// <summary>
         /// Type

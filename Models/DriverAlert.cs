@@ -1,4 +1,7 @@
-﻿namespace DeliveryTrackingApp.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace DeliveryTrackingApp.Models;
 
 public partial class DriverAlert
 {

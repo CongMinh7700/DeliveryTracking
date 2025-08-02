@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace DeliveryTrackingApp.Models;
 
-public partial class DeliveryTrip
+public partial class DeliveryNote
 {
     public Guid Id { get; set; }
 
-    public string UserId { get; set; } = null!;
+    public string Code { get; set; } = null!;
 
-    public Guid DeliveryNoteId { get; set; }
+    public DateOnly DeliveryDate { get; set; }
 
-    public int TripType { get; set; }
+    public string? Note { get; set; }
 
     public DateTime CreatedOn { get; set; }
 
@@ -23,7 +23,5 @@ public partial class DeliveryTrip
 
     public bool IsDeleted { get; set; }
 
-    public virtual DeliveryNote DeliveryNote { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
+    public virtual ICollection<DeliveryTrip> DeliveryTrips { get; set; } = new List<DeliveryTrip>();
 }

@@ -70,7 +70,7 @@ public class DeliveryTripController : Controller
             try
             {
                 // Replace Admin =  tripID of Admin
-                var newDeliveryTrip = Models.DeliveryTrip.Create(model.UserId, Enums.TripType.Departure, "Admin");
+                var newDeliveryTrip = Models.DeliveryTrip.Create(model.UserId, model.DeliveryNoteId, Enums.TripType.Departure, "Admin");
                 _db.DeliveryTrips.Add(newDeliveryTrip);
                 _db.SaveChanges();
                 return RedirectToAction("DeliveryTripPage");
@@ -106,7 +106,7 @@ public class DeliveryTripController : Controller
                 var trip = _db.DeliveryTrips.Find(model.Id);
                 if (trip == null) return NotFound();
 
-                trip.Update(1, "AD01");
+                trip.Update(model.Type, model.NoteId, "AD01");
                 _db.DeliveryTrips.Update(trip);
                 _db.SaveChanges();
             }
