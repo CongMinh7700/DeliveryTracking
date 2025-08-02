@@ -150,7 +150,7 @@ public class UserController : Controller
         var user = _db.Users.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
         if (user != null)
         {
-            user.Delete("AD01"); // Thay 1 bằng UserId thực tế
+            user.Delete("AD01");
             _db.SaveChanges();
             TempData["Message"] = "Xóa người dùng thành công";
         }

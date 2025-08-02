@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp.Controllers;
 
+using DeliveryTrackingApp.Services.Interface;
 using Helpers;
 using Models;
 using static Models.DeliveryNote;
@@ -13,11 +14,12 @@ public class DeliveryNoteController : Controller
 {
     private readonly ILogger<DeliveryNoteController> _logger;
     private readonly DeliveryDbContext _db;
-
-    public DeliveryNoteController(ILogger<DeliveryNoteController> logger, DeliveryDbContext db)
+    private readonly ICurrentUserService _currentUser;
+    public DeliveryNoteController(ILogger<DeliveryNoteController> logger, DeliveryDbContext db, ICurrentUserService currentUser)
     {
         _logger = logger;
         _db = db;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -77,9 +79,8 @@ public class DeliveryNoteController : Controller
         {
             try
             {
-                var createBy = User.FindFirst("UserId")?.Value;
                 var code = GenerateStringId.GenerateCode(_db.DeliveryNotes, u => u.Code, "PG", 3);
-                var newDeliveryNote = DeliveryNote.Create(code, model.DeliveryTime, model.Note, createBy);
+                var newDeliveryNote = DeliveryNote.Create(code, model.DeliveryTime, model.Note, _currentUser.UserId);
                 _db.DeliveryNotes.Add(newDeliveryNote);
                 _db.SaveChanges();
                 return RedirectToAction("DeliveryNotePage");
