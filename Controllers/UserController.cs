@@ -84,23 +84,48 @@ public class UserController : Controller
             .Select(p =>
             {
                 var dto = p.ToSearchDto();
-                var deliveryTime = dto.CreatedOn;
-
+                var deliveryTime = dto.CreatedOn; // thời điểm giao hàng thực tế
                 var requiredTime = p.DeliveryNote?.DeliveryTime ?? DateTime.MaxValue;
 
+                // 1. Lấy cảnh báo hết tài xế trước thời điểm giao
                 var alert = _db.DriverAlerts
                     .Where(a => a.CreatedOn <= deliveryTime)
                     .OrderByDescending(a => a.CreatedOn)
                     .FirstOrDefault();
 
-                var alertTime = alert?.CreatedOn;
-
                 var deadline = requiredTime;
-                if (alertTime.HasValue && alertTime.Value < requiredTime)
+
+                var deliveryDate = requiredTime.Date;
+                var isToday = deliveryDate == DateTime.Today;
+                var now = DateTime.Now;
+
+                // 2. Nếu hôm nay và sau 17h45 mà chưa giao → dời deadline sang 8h hôm sau
+                if (isToday && now.TimeOfDay > Setting.TimeOff.ToTimeSpan() && deliveryTime > requiredTime)
                 {
-                    deadline = alertTime.Value;
+                    var nextDay = deliveryDate.AddDays(1);
+                    deadline = nextDay + Setting.TimeToWork.ToTimeSpan(); // 08:00 ngày mai
+                }
+                // 3. Nếu có cảnh báo hết tài xế trước thời hạn
+                else if (alert?.CreatedOn < requiredTime)
+                {
+                    deadline = alert.CreatedOn;
+                }
+                // 4. Nếu không rơi vào 2 trường hợp trên → tìm lúc tài xế bắt đầu rảnh
+                else
+                {
+                    var readyTime = _db.DeliveryTrips
+                        .Where(t => t.UserId == p.UserId && t.TripType == 1 && !t.IsDeleted && t.CreatedOn <= deliveryTime)
+                        .OrderByDescending(t => t.CreatedOn)
+                        .Select(t => (DateTime?)t.CreatedOn)
+                        .FirstOrDefault();
+
+                    if (readyTime.HasValue)
+                    {
+                        deadline = readyTime.Value;
+                    }
                 }
 
+                // 5. So sánh deadline với thời điểm giao thực tế
                 dto.Status = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery) ? "Giao trễ" : "Đúng giờ";
 
                 return dto;

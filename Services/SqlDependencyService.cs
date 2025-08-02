@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DeliveryTrackingApp.Services;
 
+using Constants;
 using Hubs;
 using static Models.User;
 
@@ -34,6 +35,10 @@ public class SqlDependencyService
         _command.ExecuteReader(); // bắt buộc
     }
 
+    /// <summary>
+    /// OnTripsChangedAsync
+    /// </summary>
+    /// <returns></returns>
     private async Task OnTripsChangedAsync()
     {
         _dependency.OnChange -= async (s, e) => await OnTripsChangedAsync(); // tránh gọi nhiều lần
@@ -42,20 +47,29 @@ public class SqlDependencyService
         var driverStatusList = GetDriverStatuses();
         await _hubContext.Clients.All.SendAsync("ReceiveDriverStatusList", driverStatusList);
 
-        if (driverStatusList.All(d => d.Status == "Bận"))
-        {
-            var message = $"⚠️ Hết tài xế lúc {DateTime.Now:HH:mm:ss dd/MM/yyyy}";
-            await _hubContext.Clients.All.SendAsync("ReceiveDriverAlert", message);
+        // Kiểm tra thời gian và ngày hiện tại
+        var now = DateTime.Now;
+        var currentTime = TimeOnly.FromDateTime(now);
+        var isWithinWorkingHours = currentTime >= Setting.TimeToWork && currentTime <= Setting.TimeOff;
+        var isNotSunday = now.DayOfWeek != DayOfWeek.Sunday;
 
-            // Lưu vào DB
-            using (var connection = new SqlConnection(_connectionString))
+        if (isWithinWorkingHours && isNotSunday)
+        {
+            if (driverStatusList.All(d => d.Status == "Bận"))
             {
-                var insertQuery = "INSERT INTO DriverAlerts (Message) VALUES (@Message)";
-                using (var cmd = new SqlCommand(insertQuery, connection))
+                var message = $"⚠️ Hết tài xế lúc {now:HH:mm:ss dd/MM/yyyy}";
+                await _hubContext.Clients.All.SendAsync("ReceiveDriverAlert", message);
+
+                // Lưu vào DB
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    cmd.Parameters.AddWithValue("@Message", message);
-                    connection.Open();
-                    await cmd.ExecuteNonQueryAsync();
+                    var insertQuery = "INSERT INTO DriverAlerts (Message) VALUES (@Message)";
+                    using (var cmd = new SqlCommand(insertQuery, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@Message", message);
+                        connection.Open();
+                        await cmd.ExecuteNonQueryAsync();
+                    }
                 }
             }
         }

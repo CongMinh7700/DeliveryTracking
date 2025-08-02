@@ -25,7 +25,11 @@ public class HomeController : Controller
 
     public IActionResult Privacy()
     {
-        return View();
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return View();
+        }
+        return RedirectToAction("Login", "Authentication");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
