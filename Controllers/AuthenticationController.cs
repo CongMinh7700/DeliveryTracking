@@ -40,12 +40,27 @@ public class AuthenticationController : Controller
         return View();
     }
 
+    [HttpGet]
+    public IActionResult Register()
+    {
+        return View();
+    }
+
     [HttpPost]
     public ActionResult Register(RegisterR request)
     {
         if (ModelState.IsValid)
         {
-            var ett = _db.Users.FirstOrDefault(s => s.Username == request.Username);
+            var ett = _db.Users.FirstOrDefault(p => p.Username == request.Username);
+            var role = _db.Roles.FirstOrDefault(p => p.Name.ToLower() == RoleString.Driver.ToLower());
+
+            if (role == null)
+            {
+                role = Role.Create(RoleString.Driver, "AD01");
+                _db.Roles.Add(role);
+                _db.SaveChanges();
+            }
+
             if (ett != null)
             {
                 ModelState.AddModelError("Username", "Username đã tồn tại ! Vui lòng sử dụng 1 email khác");
@@ -58,7 +73,8 @@ public class AuthenticationController : Controller
             else
             {
                 string hashedPassword = PasswordHash.HashPassword(request.Password);
-                ett = Models.User.Create(request.Username + "", hashedPassword, request.FullName + "", "admin");
+                ett = Models.User.Create(request.Username + "", hashedPassword, request.FullName + "", role.Id, "admin");
+
                 _db.Users.Add(ett);
                 _db.SaveChanges();
                 return RedirectToAction("Index", "Login");

@@ -14,7 +14,7 @@ partial class User
     /// <param name="fullName"></param>
     /// <param name="createdBy"></param>
     /// <returns></returns>
-    public static User Create(string id, string username, string fullName, string createdBy)
+    public static User Create(string id, string username, string fullName, Guid roleId, string createdBy)
     {
         var res = new User
         {
@@ -24,7 +24,7 @@ partial class User
             FullName = fullName,
             CreatedBy = createdBy,
             CreatedOn = DateTime.Now,
-            RoleId = Guid.Parse("eb37277d-5138-4e08-a49e-e57c6e657847"),// Driver
+            RoleId = roleId
         };
 
         return res;

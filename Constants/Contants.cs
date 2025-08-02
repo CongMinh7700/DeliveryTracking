@@ -18,3 +18,9 @@ public static class DriverStatus
     public static string Busy = "Bận";
     public static string Available = "Rảnh";
 }
+
+public static class RoleString
+{
+    public static string Driver = "Driver";
+    public static string Admin = "Admin";
+}

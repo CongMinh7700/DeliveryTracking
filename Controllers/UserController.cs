@@ -6,7 +6,6 @@ namespace DeliveryTrackingApp.Controllers;
 using Constants;
 using Hubs;
 using Models;
-using static Models.User;
 
 public class UserController : Controller
 {
@@ -80,8 +79,15 @@ public class UserController : Controller
             try
             {
                 string userId = GenerateUserId();
-                // Replace Admin =  userID of Admin
-                var newUser = Models.User.Create(userId, model.Username + "", model.FullName + "", "Admin");
+                var role = _db.Roles.FirstOrDefault(p => p.Name.ToLower() == Constants.RoleString.Driver.ToLower());
+                if (role == null)
+                {
+                    role = Role.Create(RoleString.Driver, "AD01");
+                    _db.Roles.Add(role);
+                    _db.SaveChanges();
+                }
+
+                var newUser = Models.User.Create(userId, model.Username + "", model.FullName + "", role.Id, "AD01");
                 _db.Users.Add(newUser);
                 _db.SaveChanges();
                 return RedirectToAction("UserPage");
@@ -104,7 +110,7 @@ public class UserController : Controller
 
     // POST: /User/UserUpdate/5
     [HttpPost]
-    public IActionResult UserUpdate(UserUpdateDto model)
+    public IActionResult UserUpdate(User.UserUpdateDto model)
     {
         if (ModelState.IsValid)
         {
