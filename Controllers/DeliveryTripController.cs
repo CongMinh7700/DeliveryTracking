@@ -5,19 +5,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp.Controllers;
 
+using Constants;
 using Enums;
 using Models;
+using Services.Interface;
 using static Models.DeliveryTrip;
 
 public class DeliveryTripController : Controller
 {
     private readonly ILogger<DeliveryTripController> _logger;
     private readonly DeliveryDbContext _db;
+    private readonly ICurrentUserService _currentUser;
 
-    public DeliveryTripController(ILogger<DeliveryTripController> logger, DeliveryDbContext db)
+    public DeliveryTripController(ILogger<DeliveryTripController> logger, DeliveryDbContext db, ICurrentUserService currentUser)
     {
         _logger = logger;
         _db = db;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -38,8 +42,8 @@ public class DeliveryTripController : Controller
         var trip = _db.DeliveryTrips.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
         if (trip != null)
         {
-            var createBy = User.FindFirst("UserId")?.Value;
-            trip.Delete(createBy);//Replace to AdminId
+
+            trip.Delete(_currentUser.UserId);//Replace to AdminId
             _db.SaveChanges();
             TempData["Message"] = "Xóa chuyến đi thành công";
         }
@@ -69,18 +73,62 @@ public class DeliveryTripController : Controller
 
         try
         {
-            var createBy = User.FindFirst("UserId")?.Value;
-            var newDeliveryTrip = DeliveryTrip.Create(model.UserId, model.DeliveryNoteId, model.Type, createBy);
+            // Lấy thông tin phiếu giao hàng
+            var deliveryNote = _db.DeliveryNotes
+                .FirstOrDefault(p => p.Id == model.DeliveryNoteId && !p.IsDeleted);
+
+            if (deliveryNote == null)
+            {
+                ModelState.AddModelError("", "Không tìm thấy phiếu giao hàng.");
+                LoadDropdowns(model.UserId, model.Type, model.DeliveryNoteId);
+                return View(model);
+            }
+
+            var now = DateTime.Now;
+            var deliveryStatus = (int)TripStatus.OnTime;
+            var deliveryTrip = _db.DeliveryTrips.OrderByDescending(p => p.CreatedOn).Where(p => !p.IsDeleted);
+            var departureTrip = deliveryTrip.FirstOrDefault(p => p.TripType == (int)TripType.Departure && p.UserId == model.UserId);
+
+            var existDeliveryTrip = deliveryTrip.FirstOrDefault(p => p.DeliveryNoteId == model.DeliveryNoteId && !p.IsDeleted);
+
+            bool isDeparture = model.Type == (int)TripType.Departure;
+            bool isReturn = model.Type == (int)TripType.Return;
+            if (existDeliveryTrip != null)
+            {
+                bool isSameUserDuplicateDeparture =
+                    existDeliveryTrip.UserId == model.UserId &&
+                    existDeliveryTrip.TripType == (int)TripType.Departure &&
+                    isDeparture;
+
+                bool isOtherUserHandling = existDeliveryTrip.UserId != model.UserId;
+                if (isSameUserDuplicateDeparture || isOtherUserHandling)
+                {
+                    LoadDropdowns(model.UserId, model.Type, model.DeliveryNoteId);
+                    ModelState.AddModelError("", "Đơn hàng này đang được giao.");
+                    return View(model);
+                }
+            }
+            else if (existDeliveryTrip == null && isReturn)
+            {
+                LoadDropdowns(model.UserId, model.Type, model.DeliveryNoteId);
+                ModelState.AddModelError("", "Đơn hàng chưa được giao.");
+                return View(model);
+            }
+
+            deliveryStatus = departureTrip != null ? departureTrip.Status : CalculateDeliveryStatus(model.UserId, deliveryNote, now);
+
+            // Tạo mới chuyến đi 
+            var newDeliveryTrip = DeliveryTrip.Create(model.UserId, model.DeliveryNoteId, model.Type, deliveryStatus, _currentUser.UserId, now);
+
             _db.DeliveryTrips.Add(newDeliveryTrip);
 
-            //Update trạng thái phiếu giao
-            var deliveryNote = _db.DeliveryNotes.Where(p => p.Id == model.DeliveryNoteId && !p.IsDeleted).FirstOrDefault();
-            if (deliveryNote != null)
-            {
-                var status = model.Type == (int)TripType.Departure ? (int)DeliveryNoteStatus.Delivering : (int)DeliveryNoteStatus.Delivered;
-                deliveryNote.UpdateStatus(status, "AD01");
-                _db.DeliveryNotes.Update(deliveryNote);
-            }
+            // Cập nhật trạng thái cho phiếu giao
+            var noteStatus = model.Type == (int)TripType.Departure
+                ? (int)NoteStatus.Delivering
+                : (int)NoteStatus.Delivered;
+
+            deliveryNote.UpdateStatus(noteStatus, _currentUser.UserId);
+            _db.DeliveryNotes.Update(deliveryNote);
 
             _db.SaveChanges();
 
@@ -119,8 +167,7 @@ public class DeliveryTripController : Controller
                 var trip = _db.DeliveryTrips.Include(p => p.DeliveryNote).FirstOrDefault(p => p.Id == model.Id && !p.IsDeleted);
                 if (trip == null) return NotFound();
 
-                var createBy = User.FindFirst("UserId")?.Value;
-                trip.Update(model.Type, model.NoteId, createBy);
+                trip.Update(model.Type, model.NoteId, _currentUser.UserId);
                 _db.DeliveryTrips.Update(trip);
                 _db.SaveChanges();
             }
@@ -135,31 +182,32 @@ public class DeliveryTripController : Controller
     /// <summary>
     /// LoadDropdowns
     /// </summary>
-    /// <param name="selectedUser"></param>
+    /// <param name="selectedDriver"></param>
     /// <param name="selectedTripType"></param>
     /// <param name="slectedDeliveryNote"></param>
-    private void LoadDropdowns(object selectedUser = null, object selectedTripType = null, object slectedDeliveryNote = null)
+    private void LoadDropdowns(object selectedDriver = null, object selectedTripType = null, object slectedDeliveryNote = null)
     {
+        // TripType
         var types = EnumHelper.GetIntListWithDescriptions<TripType>();
         ViewBag.TripTypes = new SelectList(types, "Key", "Value", selectedTripType);
 
-        var users = _db.Users.Where(p => !p.IsDeleted).Select(p => p.ToSearchCbDto()).ToList();
-        ViewBag.Users = new SelectList(users, "UserId", "FullName", selectedUser);
+        // Drivers
+        var drivers = _db.Users.Include(u => u.Role)
+            .Where(u => !u.IsDeleted && u.Role != null && u.Role.Name != RoleString.Admin)
+            .Select(u => u.ToSearchCbDto()).ToList();
+        ViewBag.Users = new SelectList(drivers, "UserId", "FullName", selectedDriver);
 
-        var selectedUserId = selectedUser?.ToString();
+        var selectedUserId = selectedDriver?.ToString();
         if (selectedUserId == null)
         {
-            selectedUserId = users.First().UserId;
+            selectedUserId = drivers.First().UserId;
         }
 
-        var rawNotes = _db.DeliveryNotes
-            .Where(p => !p.IsDeleted && p.DeliveryTime <= DateTime.Now)
-            .Include(p => p.DeliveryTrips)
-            .ToList();
+        var rawNotes = _db.DeliveryNotes.Where(p => !p.IsDeleted).Include(p => p.DeliveryTrips).ToList();
 
         var deliveryNotes = rawNotes
             .Where(p =>
-                p.Status == (int)DeliveryNoteStatus.Pending ||
+                p.Status == (int)NoteStatus.Pending ||
                 (
                     !string.IsNullOrEmpty(selectedUserId)
                     && p.DeliveryTrips.Any()
@@ -169,6 +217,53 @@ public class DeliveryTripController : Controller
                 )
             ).Select(p => p.ToSearchCbDto()).ToList();
 
-        ViewBag.DeliveryNotes = new SelectList(deliveryNotes, "DeliveryNoteId", "Code", selectedUser);
+        ViewBag.DeliveryNotes = new SelectList(deliveryNotes, "DeliveryNoteId", "Code", selectedDriver);
+    }
+
+    /// <summary>
+    /// CalculateDeliveryStatus
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="deliveryNote"></param>
+    /// <param name="now"></param>
+    /// <returns></returns>
+    private int CalculateDeliveryStatus(string userId, DeliveryNote deliveryNote, DateTime now)
+    {
+        var deliveryTime = now;// TG tài xế giao hàng
+        var requiredTime = deliveryNote.DeliveryTime;// Thời gian giao hàng trên phiếu
+        var deadline = requiredTime; //Thời gian cần giao thực tế
+        var deliveryDate = requiredTime.Date;
+
+        // Thời điểm hết tài
+        var alert = _db.DriverAlerts.Where(a => a.CreatedOn <= deliveryTime).OrderByDescending(a => a.CreatedOn).FirstOrDefault();
+        if (deliveryDate == now.Date && now.TimeOfDay > Setting.TimeOff.ToTimeSpan())
+        {
+            deadline = deliveryDate.AddDays(1).Add(Setting.TimeToWork.ToTimeSpan());
+        }
+        else if (alert?.CreatedOn > requiredTime)
+        {
+            deadline = alert.CreatedOn;
+        }
+        else
+        {
+            var readyTime = _db.DeliveryTrips
+                .Where(t => t.UserId == userId
+                && t.TripType == (int)TripType.Return
+                && !t.IsDeleted)
+                .OrderByDescending(t => t.CreatedOn)
+                .Select(t => (DateTime?)t.CreatedOn)
+                .FirstOrDefault();
+
+            if (readyTime.HasValue)
+            {
+                if (readyTime > deadline)
+                {
+                    deadline = readyTime.Value;
+                }
+            }
+        }
+
+        var isLate = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery);
+        return isLate ? (int)TripStatus.Late : (int)TripStatus.OnTime;
     }
 }

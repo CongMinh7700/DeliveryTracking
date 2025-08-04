@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryTrackingApp.Controllers;
 
-using DeliveryTrackingApp.Services.Interface;
 using Helpers;
 using Models;
+using Services.Interface;
 using static Models.DeliveryNote;
 
 [Authorize(Roles = "Admin")]
@@ -51,8 +51,8 @@ public class DeliveryNoteController : Controller
                 return RedirectToAction("DeliveryNotePage");
             }
 
-            var createBy = User.FindFirst("UserId")?.Value;
-            note.Delete(createBy); // Replace bằng AdminId
+            ;
+            note.Delete(_currentUser.UserId); // Replace bằng AdminId
             _db.SaveChanges();
             TempData["Message"] = "Xóa phiếu giao thành công";
         }
@@ -112,8 +112,8 @@ public class DeliveryNoteController : Controller
                 var note = _db.DeliveryNotes.Find(model.Id);
                 if (note == null) return NotFound();
 
-                var createBy = User.FindFirst("UserId")?.Value;
-                note.Update(model.DeliveryTime, model.Note, createBy);
+                ;
+                note.Update(model.DeliveryTime, model.Note, _currentUser.UserId);
                 _db.DeliveryNotes.Update(note);
                 _db.SaveChanges();
             }

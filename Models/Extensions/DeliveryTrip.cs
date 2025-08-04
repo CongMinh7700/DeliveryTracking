@@ -1,5 +1,6 @@
 ﻿namespace DeliveryTrackingApp.Models;
 
+using System.ComponentModel.DataAnnotations;
 using Enums;
 
 partial class DeliveryTrip
@@ -15,18 +16,20 @@ partial class DeliveryTrip
     /// <param name="userId"></param>
     /// <param name="noteId"></param>
     /// <param name="type"></param>
+    /// <param name="status"></param>
     /// <param name="createdBy"></param>
     /// <returns></returns>
-    public static DeliveryTrip Create(string userId, Guid noteId, int type, string createdBy)
+    public static DeliveryTrip Create(string userId, Guid noteId, int type, int status, string createdBy, DateTime createdOn)
     {
         var res = new DeliveryTrip
         {
             UserId = userId,
             TripType = type,
             DeliveryNoteId = noteId,
+            Status = status,
 
             CreatedBy = createdBy,
-            CreatedOn = DateTime.Now,
+            CreatedOn = createdOn,
         };
 
         return res;
@@ -61,6 +64,10 @@ partial class DeliveryTrip
     public SearchDto ToSearchDto()
     {
         var res = ToBaseDto<SearchDto>();
+
+        res.Status = Status;
+        res.DeliveryNoteCode = DeliveryNote?.Code + "";
+
         return res;
     }
 
@@ -114,6 +121,7 @@ partial class DeliveryTrip
         /// <summary>
         /// DeliveryNoteId
         /// </summary>
+        [Required(ErrorMessage = "Vui lòng chọn phiếu giao")]
         public Guid DeliveryNoteId { get; set; }
 
         /// <summary>
@@ -141,6 +149,7 @@ partial class DeliveryTrip
                 return EnumHelper.GetDescription((TripType)Type);
             }
         }
+
 
         /// <summary>
         /// CreatedBy
@@ -170,10 +179,27 @@ partial class DeliveryTrip
     /// </summary>
     public class SearchDto : BaseDto
     {
+
         /// <summary>
         /// Status
         /// </summary>
-        public string? Status { get; set; }
+        public int? Status { get; set; }
+
+        /// <summary>
+        /// StatusName
+        /// </summary>
+        public string StatusName
+        {
+            get
+            {
+                return EnumHelper.GetDescription((TripStatus)Status);
+            }
+        }
+
+        /// <summary>
+        /// DeliveryNoteCode
+        /// </summary>
+        public string DeliveryNoteCode { get; set; }
     }
 
     /// <summary>

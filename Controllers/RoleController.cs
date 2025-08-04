@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DeliveryTrackingApp.Controllers;
 
 using Models;
+using Services.Interface;
 using static Models.Role;
 
 [Authorize(Roles = "Admin")]
@@ -11,11 +12,13 @@ public class RoleController : Controller
 {
     private readonly ILogger<RoleController> _logger;
     private readonly DeliveryDbContext _db;
+    private readonly ICurrentUserService _currentUser;
 
-    public RoleController(ILogger<RoleController> logger, DeliveryDbContext db)
+    public RoleController(ILogger<RoleController> logger, DeliveryDbContext db, ICurrentUserService currentUser)
     {
         _logger = logger;
         _db = db;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -35,8 +38,8 @@ public class RoleController : Controller
         var role = _db.Roles.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
         if (role != null)
         {
-            var createBy = User.FindFirst("UserId")?.Value;
-            role.Delete(createBy);//Replace to AdminId
+            ;
+            role.Delete(_currentUser.UserId);//Replace to AdminId
             _db.SaveChanges();
             TempData["Message"] = "Xóa quyền thành công";
         }
@@ -61,8 +64,8 @@ public class RoleController : Controller
         {
             try
             {
-                var createBy = User.FindFirst("UserId")?.Value;
-                var newRole = Models.Role.Create(model.Name, createBy);
+                ;
+                var newRole = Models.Role.Create(model.Name, _currentUser.UserId);
                 _db.Roles.Add(newRole);
                 _db.SaveChanges();
                 return RedirectToAction("RolePage");
@@ -91,11 +94,11 @@ public class RoleController : Controller
         {
             try
             {
-                var createBy = User.FindFirst("UserId")?.Value;
+                ;
                 var role = _db.Roles.Find(model.Id);
                 if (role == null) return NotFound();
 
-                role.Update(model.Name, createBy);
+                role.Update(model.Name, _currentUser.UserId);
                 _db.Roles.Update(role);
                 _db.SaveChanges();
 

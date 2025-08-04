@@ -88,6 +88,7 @@ partial class DeliveryNote
 
         res.DeliveryNoteId = Id;
         res.Code = Code;
+        res.Status = Status;
 
         return res;
     }
@@ -209,5 +210,10 @@ partial class DeliveryNote
         /// Code
         /// </summary>
         public string? Code { get; set; }
+
+        /// <summary>
+        /// Status
+        /// </summary>
+        public int Status { get; set; }
     }
 }

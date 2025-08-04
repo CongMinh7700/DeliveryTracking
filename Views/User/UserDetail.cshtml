@@ -46,6 +46,7 @@ else
             <tr>
                 <th>Mã</th>
                 <th>Phiếu giao</th>
+                <th>Ngày giao</th>
                 <th>Tài xế</th>
                 <th>Đi / Về</th>
                 <th>Trạng thái</th>
@@ -84,9 +85,10 @@ else
                             <tr>
                                 <td>${item.id}</td>
                                 <td>${item.deliveryNoteCode}</td>
+                                <td>${item.createdOn}</td>
                                 <td>${item.userId}</td>
                                 <td>${item.typeName}</td>
-                                <td>${item.status}</td>
+                                <td>${item.statusName}</td>
                             </tr>`;
                         tableBody.insertAdjacentHTML("beforeend", row);
                     });

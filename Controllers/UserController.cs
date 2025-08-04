@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -10,18 +9,21 @@ using Constants;
 using Helpers;
 using Hubs;
 using Models;
+using Services.Interface;
 
 public class UserController : Controller
 {
     private readonly ILogger<UserController> _logger;
     private readonly DeliveryDbContext _db;
     private readonly IHubContext<DriverStatusHub> _hubContext;
+    private readonly ICurrentUserService _currentUser;
 
-    public UserController(ILogger<UserController> logger, DeliveryDbContext db, IHubContext<DriverStatusHub> hubContext)
+    public UserController(ILogger<UserController> logger, DeliveryDbContext db, IHubContext<DriverStatusHub> hubContext, ICurrentUserService currentUser)
     {
         _logger = logger;
         _db = db;
         _hubContext = hubContext;
+        _currentUser = currentUser;
     }
 
     // Check thêm role user thường không thể thấy admin
@@ -29,7 +31,7 @@ public class UserController : Controller
     [HttpGet]
     public IActionResult UserPage(string? keyword)
     {
-        var query = _db.Users.Where(p => !p.IsDeleted);
+        var query = _db.Users.Where(u => !u.IsDeleted && u.Role != null && u.Role.Name != RoleString.Admin);
 
         if (!string.IsNullOrEmpty(keyword))
         {
@@ -75,69 +77,11 @@ public class UserController : Controller
     [HttpGet("api/users/{id}/trips")]
     public IActionResult GetUserTrips(string id)
     {
-        var stopwatch = Stopwatch.StartNew(); // bắt đầu đo
-
         var trips = _db.DeliveryTrips.Where(p => p.UserId == id && !p.IsDeleted)
-            .OrderByDescending(p => p.CreatedOn)
             .Include(p => p.DeliveryNote)
+            .OrderByDescending(p => p.CreatedOn)
             .ToList()
-            .Select(p =>
-            {
-                var dto = p.ToSearchDto();
-                var deliveryTime = dto.CreatedOn; // thời điểm giao hàng thực tế
-                var requiredTime = p.DeliveryNote?.DeliveryTime ?? DateTime.MaxValue;
-
-                // 1. Lấy cảnh báo hết tài xế trước thời điểm giao
-                var alert = _db.DriverAlerts
-                    .Where(a => a.CreatedOn <= deliveryTime)
-                    .OrderByDescending(a => a.CreatedOn)
-                    .FirstOrDefault();
-
-                var deadline = requiredTime;
-
-                var deliveryDate = requiredTime.Date;
-                var isToday = deliveryDate == DateTime.Today;
-                var now = DateTime.Now;
-
-                // 2. Nếu hôm nay và sau 17h45 mà chưa giao → dời deadline sang 8h hôm sau
-                if (isToday && now.TimeOfDay > Setting.TimeOff.ToTimeSpan() && deliveryTime > requiredTime)
-                {
-                    var nextDay = deliveryDate.AddDays(1);
-                    deadline = nextDay + Setting.TimeToWork.ToTimeSpan(); // 08:00 ngày mai
-                }
-                // 3. Nếu có cảnh báo hết tài xế trước thời hạn
-                else if (alert?.CreatedOn < requiredTime)
-                {
-                    deadline = alert.CreatedOn;
-                }
-                // 4. Nếu không rơi vào 2 trường hợp trên → tìm lúc tài xế bắt đầu rảnh
-                else
-                {
-                    var readyTime = _db.DeliveryTrips
-                        .Where(t => t.UserId == p.UserId && t.TripType == 1 && !t.IsDeleted && t.CreatedOn <= deliveryTime)
-                        .OrderByDescending(t => t.CreatedOn)
-                        .Select(t => (DateTime?)t.CreatedOn)
-                        .FirstOrDefault();
-
-                    if (readyTime.HasValue)
-                    {
-                        deadline = readyTime.Value;
-                    }
-                }
-
-                // 5. So sánh deadline với thời điểm giao thực tế
-                dto.Status = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery) ? "Giao trễ" : "Đúng giờ";
-
-                return dto;
-            })
-            .ToList();
-
-        stopwatch.Stop(); // dừng đồng hồ
-
-        var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-
-        // Bạn có thể log ra console, file, hoặc hiển thị tạm thời
-        Console.WriteLine($"[DEBUG] GetUserTrips mất {elapsedMilliseconds}ms cho UserId: {id}");
+            .Select(p => p.ToSearchDto()).ToList();
 
         return Ok(trips);
     }
@@ -150,7 +94,7 @@ public class UserController : Controller
         var user = _db.Users.FirstOrDefault(p => p.Id == id && p.IsDeleted == false);
         if (user != null)
         {
-            user.Delete("AD01");
+            user.Delete(_currentUser.UserId);
             _db.SaveChanges();
             TempData["Message"] = "Xóa người dùng thành công";
         }
@@ -182,12 +126,12 @@ public class UserController : Controller
                 var role = _db.Roles.FirstOrDefault(p => p.Name.ToLower() == RoleString.Driver.ToLower());
                 if (role == null)
                 {
-                    role = Role.Create(RoleString.Driver, "AD01");
+                    role = Role.Create(RoleString.Driver, _currentUser.UserId);
                     _db.Roles.Add(role);
                     _db.SaveChanges();
                 }
 
-                var newUser = Models.User.Create(userId, model.Username + "", model.FullName + "", role.Id, "AD01");
+                var newUser = Models.User.Create(userId, model.Username + "", model.FullName + "", role.Id, _currentUser.UserId);
                 _db.Users.Add(newUser);
                 _db.SaveChanges();
                 return RedirectToAction("UserPage");
@@ -219,7 +163,7 @@ public class UserController : Controller
                 var user = _db.Users.Find(model.Id);
                 if (user == null) return NotFound();
 
-                user.Update(model.Username, model.FullName, "AD01");
+                user.Update(model.Username, model.FullName, _currentUser.UserId);
                 _db.Users.Update(user);
                 _db.SaveChanges();
             }

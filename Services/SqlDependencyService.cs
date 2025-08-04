@@ -92,7 +92,7 @@ public class SqlDependencyService
             u.CreatedOn,
             CASE
                 WHEN latest.TripType = 0 THEN N'Bận'
-                ELSE N'Rảnh' -- TripType = 1 hoặc NULL (không có chuyến) đều là Rảnh
+                ELSE N'Rảnh'
             END AS Status
         FROM Users u
         OUTER APPLY (

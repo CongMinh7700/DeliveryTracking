@@ -23,6 +23,8 @@ public partial class DeliveryTrip
 
     public bool IsDeleted { get; set; }
 
+    public int Status { get; set; }
+
     public virtual DeliveryNote DeliveryNote { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;

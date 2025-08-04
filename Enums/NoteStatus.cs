@@ -2,7 +2,7 @@
 
 namespace DeliveryTrackingApp.Enums;
 
-public enum DeliveryNoteStatus
+public enum NoteStatus
 {
     /// <summary>
     /// Departure
