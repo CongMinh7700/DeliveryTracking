@@ -236,9 +236,16 @@ public class DeliveryTripController : Controller
 
         // Thời điểm hết tài
         var alert = _db.DriverAlerts.Where(a => a.CreatedOn <= deliveryTime).OrderByDescending(a => a.CreatedOn).FirstOrDefault();
-        if (deliveryDate == now.Date && now.TimeOfDay > Setting.TimeOff.ToTimeSpan())
+        if (deliveryDate < now.Date)
         {
-            deadline = deliveryDate.AddDays(1).Add(Setting.TimeToWork.ToTimeSpan());
+            if (deliveryDate.DayOfWeek == DayOfWeek.Saturday && now.TimeOfDay > Setting.TimeOff.ToTimeSpan())
+            {
+                deadline = deliveryDate.AddDays(2).Add(Setting.TimeToWork.ToTimeSpan());
+            }
+            else
+            {
+                deadline = deliveryDate.AddDays(1).Add(Setting.TimeToWork.ToTimeSpan());
+            }
         }
         else if (alert?.CreatedOn > requiredTime)
         {
