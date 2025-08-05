@@ -229,33 +229,52 @@ public class DeliveryTripController : Controller
     /// <returns></returns>
     private int CalculateDeliveryStatus(string userId, DeliveryNote deliveryNote, DateTime now)
     {
-        var deliveryTime = now;// TG tài xế giao hàng
-        var requiredTime = deliveryNote.DeliveryTime;// Thời gian giao hàng trên phiếu
-        var deadline = requiredTime; //Thời gian cần giao thực tế
-        var deliveryDate = requiredTime.Date;
+        var deliveryTime = now;
+        var deadline = CalculateDeadline(userId, deliveryNote, now);
+        var isLate = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery);
 
-        // Thời điểm hết tài
-        var alert = _db.DriverAlerts.Where(a => a.CreatedOn <= deliveryTime).OrderByDescending(a => a.CreatedOn).FirstOrDefault();
-        var readyTime = _db.DeliveryTrips.Where(t => t.UserId == userId && t.TripType == (int)TripType.Return && !t.IsDeleted)
+        return isLate ? (int)TripStatus.Late : (int)TripStatus.OnTime;
+    }
+
+    private DateTime CalculateDeadline(string userId, DeliveryNote deliveryNote, DateTime now)
+    {
+        var requiredTime = deliveryNote.DeliveryTime;
+        var deliveryDate = requiredTime.Date;
+        var deadline = requiredTime;
+
+        // Cảnh báo hết tài
+        var alert = _db.DriverAlerts
+            .Where(a => a.CreatedOn <= now)
+            .OrderByDescending(a => a.CreatedOn)
+            .FirstOrDefault();
+
+        // Chuyến về mới nhất
+        var readyTime = _db.DeliveryTrips
+            .Where(t => t.UserId == userId && t.TripType == (int)TripType.Return && !t.IsDeleted)
             .OrderByDescending(t => t.CreatedOn)
             .Select(t => (DateTime?)t.CreatedOn)
             .FirstOrDefault();
 
+        var timeToWork = Setting.TimeToWork.ToTimeSpan();
+
+        // Trường hợp giao vào ngày sau (ngày mới)
         if (deliveryDate < now.Date && (!readyTime.HasValue || readyTime < deadline))
         {
             int offsetDays = (now.Date - deliveryDate).Days;
-            deadline = deliveryDate.AddDays(offsetDays).Add(Setting.TimeToWork.ToTimeSpan());
+            deadline = deliveryDate.AddDays(offsetDays).Add(timeToWork);
         }
         else if (alert?.CreatedOn > requiredTime)
         {
+            // Giao trễ sau thời điểm hết tài
             deadline = alert.CreatedOn;
         }
-        else
+        else if (readyTime.HasValue && readyTime > deadline)
         {
+            // Giao sau khi tài xế rảnh
             deadline = readyTime.Value;
         }
 
-        var isLate = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery);
-        return isLate ? (int)TripStatus.Late : (int)TripStatus.OnTime;
+        return deadline;
     }
+
 }
