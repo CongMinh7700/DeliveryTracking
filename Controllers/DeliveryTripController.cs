@@ -236,16 +236,15 @@ public class DeliveryTripController : Controller
 
         // Thời điểm hết tài
         var alert = _db.DriverAlerts.Where(a => a.CreatedOn <= deliveryTime).OrderByDescending(a => a.CreatedOn).FirstOrDefault();
-        if (deliveryDate < now.Date)
+        var readyTime = _db.DeliveryTrips.Where(t => t.UserId == userId && t.TripType == (int)TripType.Return && !t.IsDeleted)
+            .OrderByDescending(t => t.CreatedOn)
+            .Select(t => (DateTime?)t.CreatedOn)
+            .FirstOrDefault();
+
+        if (deliveryDate < now.Date && (!readyTime.HasValue || readyTime < deadline))
         {
-            if (deliveryDate.DayOfWeek == DayOfWeek.Saturday && now.TimeOfDay > Setting.TimeOff.ToTimeSpan())
-            {
-                deadline = deliveryDate.AddDays(2).Add(Setting.TimeToWork.ToTimeSpan());
-            }
-            else
-            {
-                deadline = deliveryDate.AddDays(1).Add(Setting.TimeToWork.ToTimeSpan());
-            }
+            int offsetDays = (now.Date - deliveryDate).Days;
+            deadline = deliveryDate.AddDays(offsetDays).Add(Setting.TimeToWork.ToTimeSpan());
         }
         else if (alert?.CreatedOn > requiredTime)
         {
@@ -253,21 +252,7 @@ public class DeliveryTripController : Controller
         }
         else
         {
-            var readyTime = _db.DeliveryTrips
-                .Where(t => t.UserId == userId
-                && t.TripType == (int)TripType.Return
-                && !t.IsDeleted)
-                .OrderByDescending(t => t.CreatedOn)
-                .Select(t => (DateTime?)t.CreatedOn)
-                .FirstOrDefault();
-
-            if (readyTime.HasValue)
-            {
-                if (readyTime > deadline)
-                {
-                    deadline = readyTime.Value;
-                }
-            }
+            deadline = readyTime.Value;
         }
 
         var isLate = deliveryTime >= deadline.AddMinutes(Setting.LateDelivery);
