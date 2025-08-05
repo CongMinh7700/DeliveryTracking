@@ -86,22 +86,21 @@ public class DeliveryTripController : Controller
 
             var now = DateTime.Now;
             var deliveryStatus = (int)TripStatus.OnTime;
-            var deliveryTrip = _db.DeliveryTrips.OrderByDescending(p => p.CreatedOn).Where(p => !p.IsDeleted);
-            var departureTrip = deliveryTrip.FirstOrDefault(p => p.TripType == (int)TripType.Departure && p.UserId == model.UserId);
-
-            var existDeliveryTrip = deliveryTrip.FirstOrDefault(p => p.DeliveryNoteId == model.DeliveryNoteId && !p.IsDeleted);
-
             bool isDeparture = model.Type == (int)TripType.Departure;
             bool isReturn = model.Type == (int)TripType.Return;
+            bool isExistDepartureTrip = false;
+            var deliveryTrip = _db.DeliveryTrips.OrderByDescending(p => p.CreatedOn).Where(p => !p.IsDeleted);
+            var latestTrip = deliveryTrip.FirstOrDefault(p => p.UserId == model.UserId);
+            var existDeliveryTrip = deliveryTrip.FirstOrDefault(p => p.DeliveryNoteId == model.DeliveryNoteId && !p.IsDeleted);
             if (existDeliveryTrip != null)
             {
                 bool isSameUserDuplicateDeparture =
                     existDeliveryTrip.UserId == model.UserId &&
-                    existDeliveryTrip.TripType == (int)TripType.Departure &&
-                    isDeparture;
+                    existDeliveryTrip.TripType == (int)TripType.Departure;
 
                 bool isOtherUserHandling = existDeliveryTrip.UserId != model.UserId;
-                if (isSameUserDuplicateDeparture || isOtherUserHandling)
+                isExistDepartureTrip = isSameUserDuplicateDeparture;
+                if ((isSameUserDuplicateDeparture && isDeparture) || isOtherUserHandling)
                 {
                     LoadDropdowns(model.UserId, model.Type, model.DeliveryNoteId);
                     ModelState.AddModelError("", "Đơn hàng này đang được giao.");
@@ -115,7 +114,7 @@ public class DeliveryTripController : Controller
                 return View(model);
             }
 
-            deliveryStatus = departureTrip != null ? departureTrip.Status : CalculateDeliveryStatus(model.UserId, deliveryNote, now);
+            deliveryStatus = isExistDepartureTrip ? latestTrip.Status : CalculateDeliveryStatus(model.UserId, deliveryNote, now);
 
             // Tạo mới chuyến đi 
             var newDeliveryTrip = DeliveryTrip.Create(model.UserId, model.DeliveryNoteId, model.Type, deliveryStatus, _currentUser.UserId, now);
@@ -236,6 +235,13 @@ public class DeliveryTripController : Controller
         return isLate ? (int)TripStatus.Late : (int)TripStatus.OnTime;
     }
 
+    /// <summary>
+    /// CalculateDeadline
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="deliveryNote"></param>
+    /// <param name="now"></param>
+    /// <returns></returns>
     private DateTime CalculateDeadline(string userId, DeliveryNote deliveryNote, DateTime now)
     {
         var requiredTime = deliveryNote.DeliveryTime;
@@ -257,8 +263,13 @@ public class DeliveryTripController : Controller
 
         var timeToWork = Setting.TimeToWork.ToTimeSpan();
 
+        // Tính toán thêm ngày chủ nhật nữa
         // Trường hợp giao vào ngày sau (ngày mới)
-        if (deliveryDate < now.Date && (!readyTime.HasValue || readyTime < deadline))
+        if (readyTime.HasValue && readyTime > deadline && readyTime.Value.Date >= now.Date)
+        {
+            deadline = readyTime.Value;
+        }
+        else if (deliveryDate < now.Date)
         {
             int offsetDays = (now.Date - deliveryDate).Days;
             deadline = deliveryDate.AddDays(offsetDays).Add(timeToWork);
@@ -268,13 +279,7 @@ public class DeliveryTripController : Controller
             // Giao trễ sau thời điểm hết tài
             deadline = alert.CreatedOn;
         }
-        else if (readyTime.HasValue && readyTime > deadline)
-        {
-            // Giao sau khi tài xế rảnh
-            deadline = readyTime.Value;
-        }
 
         return deadline;
     }
-
 }
